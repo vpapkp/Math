@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e6f0ff"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<title>Math Quest</title>
+<style>
+:root{--bg:#e6f0ff;--ink:#1c2b4a;--mut:#6b7a99;--ok:#10b981;--bad:#f97316;--gold:#fbbf24;--pri:#3b5bdb}
+*{box-sizing:border-box;margin:0}
+body{font-family:ui-rounded,"Arial Rounded MT Bold","Nunito","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;justify-content:center;-webkit-tap-highlight-color:transparent}
+#app{width:100%;max-width:620px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:12px 12px calc(12px + env(safe-area-inset-bottom));padding-top:calc(12px + env(safe-area-inset-top))}
+html{-webkit-text-size-adjust:100%}body{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.ans,.ch{margin-top:auto}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
+.chip{background:#fff;border-radius:99px;padding:6px 12px;font-weight:700;font-size:15px}
+h1{font-size:28px}h2{font-size:20px;margin:14px 0 6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.card{background:#fff;border-radius:20px;padding:14px;text-align:left;border-bottom:6px solid var(--c);box-shadow:0 3px 0 #1c2b4a14}
+.card:active{transform:translateY(2px)}
+.card b{display:block;font-size:18px}.card span{font-size:26px}
+.pips{letter-spacing:3px;color:var(--c);font-size:14px}
+.btn{background:var(--pri);color:#fff;font-weight:800;font-size:18px;padding:14px 20px;border-radius:16px;box-shadow:0 4px 0 #1f3aa8}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #1f3aa8}
+.btn.alt{background:#fff;color:var(--ink);box-shadow:0 4px 0 #c9d6f0}
+.btn.go{background:var(--ok);box-shadow:0 4px 0 #0a7a57}
+.bar{height:12px;background:#fff;border-radius:9px;overflow:hidden;flex:1}.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.q{background:#fff;border-radius:24px;padding:20px 14px;text-align:center;margin:12px 0}
+.q .t{font-size:clamp(30px,9vw,52px);font-weight:800}.q .s{font-size:17px;font-weight:600;line-height:1.5}
+.ans{font-size:40px;font-weight:800;min-height:56px;background:#fff;border-radius:16px;text-align:center;padding:4px;margin-bottom:10px;border:3px solid #fff}
+.ans.ok{border-color:var(--ok);background:#d1fae5}.ans.bad{border-color:var(--bad);background:#ffedd5}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button,.ch button{background:#fff;border-radius:16px;font-size:28px;font-weight:800;padding:14px 0;box-shadow:0 4px 0 #c9d6f0}
+.pad button:active,.ch button:active{transform:translateY(3px);box-shadow:none}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fb{background:#fff7e0;border-radius:16px;padding:12px;margin:10px 0;font-size:16px;line-height:1.5}
+.dots div{letter-spacing:2px;color:var(--pri);font-size:14px;line-height:1.2}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}td,th{padding:8px;text-align:left;border-bottom:1px solid #e3eaf8;font-size:15px}
+input.nm{font:inherit;font-size:20px;padding:10px;border-radius:12px;border:2px solid #c9d6f0;width:100%;margin:8px 0}
+.big{font-size:64px;text-align:center}
+@media(max-width:400px),(max-height:700px){.pad button,.ch button{padding:11px 0;font-size:24px}.ans{font-size:32px;min-height:46px}.q{padding:12px 10px;margin:8px 0}h1{font-size:24px}.card{padding:10px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><main id="app"></main>
+<script>
+const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,P=a=>a[R(0,a.length-1)],sh=a=>a.sort(()=>Math.random()-.5),$=s=>document.querySelector(s);
+const K='mathquest.v1';let S={};
+try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
+S=Object.assign({name:'',xp:0,stars:0,days:0,last:'',speed:0,sk:{},snd:1,talk:0},S);
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const sk=id=>S.sk[id]=S.sk[id]||{lv:1,st:0,wr:0,ok:0,n:0,m:0};
+// ---------- helpers ----------
+let AC;const beep=(f,d,t=0)=>{if(!S.snd)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(.15,AC.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+t+d);o.connect(g);g.connect(AC.destination);o.start(AC.currentTime+t);o.stop(AC.currentTime+t+d)}catch(e){}};
+const say=t=>{if(!S.talk||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/×/g,' times ').replace(/÷/g,' divided by ').replace(/−/g,' minus ').replace(/\+/g,' plus ').replace(/▢/g,' what number ').replace(/=/g,' equals '));u.rate=.9;speechSynthesis.speak(u)};
+const skipc=(n,k)=>Array.from({length:k},(_,i)=>n*(i+1)).join(', ');
+const split=(a,b,o)=>{if(b<10)return `Count ${o=='+'?'up':'back'} ${b} from ${a}.`;const big=b>=100?Math.floor(b/100)*100:Math.floor(b/10)*10,r=b-big,m=o=='+'?a+big:a-big;return `${a} ${o} ${big} = ${m}. Then ${m} ${o} ${r} = ${o=='+'?a+b:a-b}.`};
+const dots=(a,b)=>a*b>100?'':'<div class=dots>'+Array.from({length:a},()=>'<div>'+'● '.repeat(b)+'</div>').join('')+'</div>';
+const bar=(n,d)=>`<svg viewBox="0 0 ${d*40} 40" width="${Math.min(d*40,300)}">`+Array.from({length:d},(_,i)=>`<rect x="${i*40+2}" y="2" width="36" height="36" rx="6" fill="${i<n?'#fbbf24':'#fff'}" stroke="#3b5bdb" stroke-width="2.5"/>`).join('')+'</svg>';
+const SETS=[[2,5,10],[3,4],[6,7],[8,9],[2,3,4,5,6,7,8,9,10]];
+const NM=['Mia','Leo','Ava','Sam','Zoe','Max','Ivy','Ben'],IT=['stickers','apples','marbles','cards','cookies','pencils','shells'];
+// ---------- skills: g(level) -> {q,a,h,v?,ch?} ----------
+const SK={
+add:{n:'Addition',e:'➕',c:'#3b5bdb',g(l){const r=[[1,10,1,10],[10,90,1,9],[11,79,11,39],[100,600,10,399],[200,999,200,999]][l-1];const a=R(r[0],r[1]),b=R(r[2],r[3]);return{q:`${a} + ${b}`,a:a+b,h:split(a,b,'+')}}},
+sub:{n:'Subtraction',e:'➖',c:'#e8590c',g(l){let a,b;if(l==1){a=R(5,20);b=R(1,a)}else if(l==2){a=R(11,99);b=R(1,9)}else if(l==3){a=R(30,99);b=R(10,a-1)}else if(l==4){a=R(200,999);b=R(10,199)}else{a=R(300,1000);b=R(100,a-50)}return{q:`${a} − ${b}`,a:a-b,h:split(a,b,'−'.replace('−','-')).replace(/ - /g,' − ')}}},
+mul:{n:'Multiply',e:'✖️',c:'#9c36b5',g(l){const s=SETS[l-1];let a=R(1,10),b=P(s);if(l==5&&Math.random()<.4){a=R(2,9);b=R(1,9)*10;return{q:`${a} × ${b}`,a:a*b,h:`Do ${a} × ${b/10} = ${a*b/10}, then add a zero: ${a*b}.`}}if(Math.random()<.5)[a,b]=[b,a];return{q:`${a} × ${b}`,a:a*b,v:dots(a,b),h:`${a} groups of ${b}. Skip count by ${b}: ${skipc(b,Math.min(a,10))}`}}},
+div:{n:'Divide',e:'➗',c:'#0b7285',g(l){const b=P(SETS[l-1].filter(x=>x>1)),q=R(1,10);return{q:`${b*q} ÷ ${b}`,a:q,h:`Think: ${b} × ? = ${b*q}. Skip count by ${b}: ${skipc(b,q)}`}}},
+mis:{n:'Missing Number',e:'🔍',c:'#2b8a3e',g(l){const t=l<3?P(['+','-']):l<5?P(['×','÷']):P(['+','-','×','÷']),big=l<3?20:200;let x,y;
+if(t=='+'){x=R(2,big);y=R(2,big);return{q:`▢ + ${x} = ${x+y}`,a:y,h:`Opposite of adding is subtracting: ${x+y} − ${x} = ${y}.`}}
+if(t=='-'){y=R(2,big);x=y+R(2,big);return{q:`${x} − ▢ = ${x-y}`,a:y,h:`Subtract the answer from the start: ${x} − ${x-y} = ${y}.`}}
+x=R(2,9);y=R(2,10);if(t=='×')return{q:`▢ × ${x} = ${x*y}`,a:y,h:`Opposite of times is divide: ${x*y} ÷ ${x} = ${y}.`};return{q:`${x*y} ÷ ▢ = ${y}`,a:x,h:`${x*y} ÷ ${y} = ${x}.`}}},
+rnd:{n:'Rounding',e:'🎯',c:'#c2255c',g(l){let n,p;if(l==1){n=R(11,99);p=10}else if(l==2){n=R(101,999);p=100}else if(l==3){n=R(101,999);p=10}else if(l==4){n=R(101,999);p=P([10,100])}else{n=R(1001,9999);p=P([10,100])}const d=Math.floor(n/p)%10,pl=p==10?'ones':'tens';return{q:`Round ${n} to the nearest ${p}`,a:Math.round(n/p)*p,h:`Look at the ${pl} digit to the right: it is ${p==10?n%10:Math.floor(n/10)%10}. 5 or more rounds UP, 4 or less stays.`}}},
+frac:{n:'Fractions',e:'🍕',c:'#d9480f',g(l){
+if(l<=2){const d=l==1?P([2,3,4]):R(5,8),n=R(1,d-1),s=new Set([n+'/'+d]);while(s.size<4){const e=P([d,d+1,d+2]);s.add(R(1,e-1)+'/'+e)}return{q:'What fraction is shaded?',v:bar(n,d),a:n+'/'+d,ch:sh([...s]),h:`Bottom number = equal parts (${d}). Top number = shaded parts (${n}).`}}
+if(l==3){const d=R(3,10);let x=R(1,d-1),y=R(1,d-1);while(y==x)y=R(1,d-1);return{q:'Which fraction is bigger?',a:Math.max(x,y)+'/'+d,ch:sh([x+'/'+d,y+'/'+d]),h:'Same bottom number: the bigger top number is the bigger fraction.'}}
+if(l==4){const n=R(1,4);let x=R(n+1,10),y=R(n+1,10);while(y==x)y=R(n+1,10);return{q:'Which fraction is bigger?',a:n+'/'+Math.min(x,y),ch:sh([n+'/'+x,n+'/'+y]),h:'Same top number: a smaller bottom number means bigger pieces, so that fraction is bigger.'}}
+const [n,d]=P([[1,2],[1,3],[2,3],[1,4],[3,4]]),m=R(2,4);return{q:`${n}/${d} = ▢/${d*m}`,a:n*m,h:`Multiply the top and bottom by ${m}: ${n}×${m} = ${n*m}.`}}},
+wrd:{n:'Word Problems',e:'📖',c:'#5f3dc4',g(l){const n=P(NM),m=P(NM.filter(x=>x!=n)),i=P(IT),t=l<3?R(0,3):R(4,6),k=l*10;let a,b,c;
+if(t==0){a=R(5,10+k);b=R(3,10+k);return{q:`${n} has ${a} ${i}. ${m} gives ${n} ${b} more. How many ${i} does ${n} have now?`,a:a+b,h:`"More" means add: ${a} + ${b}.`}}
+if(t==1){a=R(15,40+k);b=R(3,a-1);return{q:`${n} had ${a} ${i} and gave ${b} away. How many are left?`,a:a-b,h:`"Gave away" means subtract: ${a} − ${b}.`}}
+if(t==2){a=R(2,9);b=R(2,9);return{q:`There are ${a} bags with ${b} ${i} in each bag. How many ${i} in all?`,a:a*b,h:`Equal groups means multiply: ${a} × ${b}.`}}
+if(t==3){b=R(2,9);c=R(2,9);return{q:`${n} shares ${b*c} ${i} equally among ${b} friends. How many does each friend get?`,a:c,h:`Sharing equally means divide: ${b*c} ÷ ${b}.`}}
+if(t==4){a=R(10,40);b=R(5,30);c=R(3,a+b-1);return{q:`${n} has ${a} ${i}, then gets ${b} more, then gives away ${c}. How many are left?`,a:a+b-c,h:`Two steps. First ${a} + ${b} = ${a+b}. Then ${a+b} − ${c}.`}}
+if(t==5){a=R(2,9);b=R(2,9);c=R(2,15);return{q:`${n} has ${a} boxes with ${b} ${i} in each box, plus ${c} loose ones. How many ${i} in all?`,a:a*b+c,h:`Two steps. First ${a} × ${b} = ${a*b}. Then add ${c}.`}}
+a=R(4,9);c=R(1,a-1);b=R(2,9);return{q:`${n} has ${a} boxes of ${b} ${i}. ${n} gives ${c} boxes away. How many ${i} are left?`,a:(a-c)*b,h:`Two steps. Boxes left: ${a} − ${c} = ${a-c}. Then ${a-c} × ${b}.`}}}
+};
+const KEYS=Object.keys(SK);
+// ---------- game ----------
+let G=null;
+const today=()=>new Date().toISOString().slice(0,10);
+function start(mode){const speed=mode=='speed';G={mode,q:[],i:0,ok:0,n:0,done:0,inp:'',lock:0,ups:[],t:60,tm:null,total:10};
+const mk=()=>{const id=speed?P(['mul','div']):mode=='mix'?P(KEYS):mode;const o=SK[id].g(speed?5:sk(id).lv);o.s=id;return o};G.mk=mk;
+if(!speed)for(let i=0;i<10;i++)G.q.push(mk());else{G.q.push(mk());G.tm=setInterval(()=>{G.t--;const e=$('#tm');if(e)e.textContent='⏱ '+G.t;if(G.t<=0){clearInterval(G.tm);end()}},1000)}
+show()}
+function cur(){return G.q[0]}
+function show(){G.inp='';const q=cur(),sp=G.mode=='speed';if(!q)return end();
+let h=`<div class="row"><button class="btn alt" onclick="quit()" aria-label="Quit" style="padding:8px 14px">✕</button><div class=bar><i style="width:${sp?G.t/.6:G.done/G.total*100}%"></i></div>${sp?`<span class=chip id=tm>⏱ ${G.t}</span><span class=chip>✔ ${G.ok}</span>`:`<span class=chip>${G.done}/${G.total}</span>`}</div>
+<div class=q>${!sp&&G.mode=='mix'?`<div class=pips style="--c:${SK[q.s].c}">${SK[q.s].e} ${SK[q.s].n}</div>`:''}${q.v?`<div>${q.v}</div>`:''}<div class="${q.q.length>16?'s':'t'}">${q.q}${q.q.length>16?'':' = ?'}</div></div><div id=fb></div>`;
+if(q.ch)h+=`<div class=ch>${q.ch.map(c=>`<button onclick="submit('${c}')">${c}</button>`).join('')}</div>`;
+else h+=`<div class=ans id=ans>${G.inp||'&nbsp;'}</div><div class=pad>${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="key('${n}')">${n}</button>`).join('')}<button onclick="key('b')" aria-label="Delete">⌫</button><button onclick="key('0')">0</button><button class=go style="background:var(--ok);color:#fff" onclick="key('e')" aria-label="Check">✓</button></div>`;
+$('#app').innerHTML=h;G.lock=0;say(q.q)}
+function key(k){if(!G||G.lock)return;if(k=='b')G.inp=G.inp.slice(0,-1);else if(k=='e'){if(G.inp)return submit(G.inp);return}else if(G.inp.length<5)G.inp+=k;$('#ans').innerHTML=G.inp||'&nbsp;'}
+function submit(v){if(G.lock)return;G.lock=1;const q=cur(),ok=String(v)==String(q.a),sp=G.mode=='speed';
+if(!q.r){const s=sk(q.s);s.n++;if(ok){s.ok++;s.st++;s.wr=0;if(s.st>=5&&s.lv<5){s.lv++;s.st=0;G.ups.push(`${SK[q.s].e} ${SK[q.s].n} → Level ${s.lv}!`)}if(s.lv==5&&s.st>=10&&!s.m){s.m=1;G.ups.push(`👑 ${SK[q.s].n} Master!`)}}else{s.st=0;s.wr++;if(s.wr>=2&&s.lv>1){s.lv--;s.wr=0}}}
+G.n++;const a=$('#ans');if(a)a.className='ans '+(ok?'ok':'bad');
+if(ok){G.ok++;S.xp+=q.r?5:10;beep(660,.12);beep(880,.15,.1);G.q.shift();if(!q.r)G.done++;
+if(sp)G.q.push(G.mk());$('#fb').innerHTML=`<div class=fb style="background:#d1fae5">✅ ${P(['Yes!','Great job!','Nailed it!','Correct!','Super!'])}</div>`;setTimeout(()=>{if(G&&G.lock)show()},sp?350:750)}
+else{beep(220,.3);G.q.shift();if(sp){G.q.push(G.mk());$('#fb').innerHTML=`<div class=fb>The answer was <b>${q.a}</b></div>`;setTimeout(()=>{if(G)show()},900)}
+else{if(!q.r)G.done++;G.q.splice(Math.min(2,G.q.length),0,Object.assign({},q,{r:1}));$('#fb').innerHTML=`<div class=fb>Not yet — the answer is <b>${q.a}</b>.<br>💡 ${q.h}${q.v&&!q.ch?q.v:''}<br><small>We'll try this one again soon.</small></div><button class="btn go" style="width:100%" onclick="show()">Next</button>`;}}
+save()}
+function end(){clearInterval(G&&G.tm);const sp=G.mode=='speed',acc=G.n?G.ok/G.n:0,st=sp?(G.ok>=20?3:G.ok>=12?2:1):(acc>=.9?3:acc>=.7?2:1);let rec='';
+if(sp&&G.ok>S.speed){S.speed=G.ok;rec='🏆 New best!'}
+S.stars+=st;const t=today();if(S.last!=t){const d=S.last?(Date.parse(t)-Date.parse(S.last))/864e5:9;S.days=d==1?S.days+1:1;S.last=t}save();
+$('#app').innerHTML=`<div class=big>${'⭐'.repeat(st)}</div><h1 style="text-align:center">${sp?`${G.ok} correct in 60 seconds`:acc>=.9?'Amazing work!':acc>=.7?'Nice job!':'Keep practicing!'}</h1><p style="text-align:center;margin:8px 0 16px;color:var(--mut)">${rec||`${G.ok} of ${G.n} right on the first try or retry`}</p>${G.ups.map(u=>`<div class=fb style="background:#e0e7ff;font-weight:700">${u}</div>`).join('')}<div class=row style="justify-content:center;margin-top:12px"><button class=btn onclick="start('${G.mode}')">Play again</button><button class="btn alt" onclick="home()">Home</button></div>`;G=null;beep(523,.15);beep(659,.15,.15);beep(784,.25,.3)}
+function quit(){if(G)clearInterval(G.tm);G=null;home()}
+// ---------- screens ----------
+function home(){if(!S.name){$('#app').innerHTML=`<h1>Welcome to Math Quest! 🚀</h1><p style="margin-top:8px">What's your name?</p><input class=nm id=nm maxlength=20 autocomplete=off><button class="btn go" onclick="S.name=($('#nm').value.trim()||'Mathlete');save();home()">Let's go</button>`;return}
+$('#app').innerHTML=`<div class="row sp"><h1>Hi, ${S.name.replace(/</g,'&lt;')}!</h1><div class=row><button class="chip" onclick="S.snd^=1;save();home()" aria-label="Sound">${S.snd?'🔊':'🔇'}</button><button class="chip" onclick="S.talk^=1;save();home()" aria-label="Read aloud">${S.talk?'🗣 on':'🗣 off'}</button></div></div>
+<div class=row style="margin-top:8px"><span class=chip>⭐ ${S.stars}</span><span class=chip>⚡ ${S.xp} XP</span><span class=chip>🔥 ${S.days} day${S.days==1?'':'s'}</span></div>
+<div class=grid>${KEYS.map(k=>{const s=sk(k),d=SK[k];return`<button class=card style="--c:${d.c}" onclick="start('${k}')"><span>${d.e}</span><b>${d.n}</b><div class=pips>${'●'.repeat(s.lv)}${'○'.repeat(5-s.lv)} ${s.m?'👑':''}</div></button>`}).join('')}</div>
+<div class=row><button class=btn onclick="start('mix')">🎲 Mixed practice</button><button class="btn alt" onclick="start('speed')">⚡ Speed round${S.speed?` (best ${S.speed})`:''}</button></div>
+<p style="margin-top:18px"><button class="chip" onclick="parent()">👨‍👩‍👧 Parent corner</button></p>`}
+function parent(){$('#app').innerHTML=`<div class="row sp"><h1>Progress</h1><button class="btn alt" onclick="home()">Back</button></div><h2>Skills</h2><table><tr><th>Skill<th>Level<th>Accuracy<th>Tried</tr>${KEYS.map(k=>{const s=sk(k);return`<tr><td>${SK[k].e} ${SK[k].n}<td>${s.lv}/5${s.m?' 👑':''}<td>${s.n?Math.round(s.ok/s.n*100)+'%':'–'}<td>${s.n}</tr>`}).join('')}</table>
+<p style="margin:12px 0;color:var(--mut);font-size:14px">Levels go up after 5 right answers in a row and drop after 2 misses in a row. Missed questions come back within the same session. Progress is saved in this browser on this device.</p>
+<button class="btn alt" onclick="if(confirm('Erase all progress?')){localStorage.removeItem(K);S={name:'',xp:0,stars:0,days:0,last:'',speed:0,sk:{},snd:1,talk:0};home()}">Reset progress</button>`}
+document.addEventListener('keydown',e=>{if(!G)return;if(/^\d$/.test(e.key))key(e.key);else if(e.key=='Backspace')key('b');else if(e.key=='Enter'){if(G.lock){const b=document.querySelector('#fb button');if(b)b.click()}else key('e')}});
+home();
+</script></body></html>
